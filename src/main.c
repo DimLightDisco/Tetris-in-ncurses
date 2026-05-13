@@ -3,30 +3,12 @@
 #include <string.h>
 #include <time.h>
 #include "../include/assets.h"
-
-typedef struct {
-	int x, y;
-} vector2;
+#include "../include/logic.h"
 
 void draw_board(char *board[BOARD_WIDTH * BOARD_HEIGHT]);
-void draw_piece(char currentPiece[18], vector2 pos, int rotation);
-
-int rotate(int px, int py, int rotation) {
-	int output;
-	switch(rotation) {
-		case 0: output = py * 4 + px; break;         // 0 degrees
-		case 1: output = 12 + py - (px * 4); break; // 90 degrees
-		case 2: output = 15 - (py * 4) - px; break; // 180 degrees
-		case 3: output = 3 - py + (px * 4); break;  // 270 degrees
-	}
-	return output;
-}
+void draw_piece(char currentPiece[18], vector2 piecePos, int rotation);
 
 int main() {
-	int currentRotation = 0;
-	char currentPiece[18];
-	vector2 piecePos;
-
 		// assets
 	char tetrimino[7][18]; init_tetrimino(tetrimino);
 	char *board[BOARD_WIDTH * BOARD_HEIGHT];
@@ -36,33 +18,60 @@ int main() {
 		}
 	} init_board(board);
 
+	vector2 piecePos; piecePos.x = BOARD_WIDTH / 2 - 2; piecePos.y = -2;
+	char currentPiece[18]; srand(time(NULL)); strcpy(currentPiece, tetrimino[rand() % 7]);
+	int currentRotation = 0;
+
 	initscr();
 	cbreak();
 	keypad(stdscr, TRUE);
 	nodelay(stdscr, TRUE);
 	curs_set(0);
 	noecho();
-	srand(time(NULL));
-
-	piecePos.x = 0; piecePos.y = 0;
-	strcpy(currentPiece, tetrimino[rand() % 7]);
 
 	bool game_over = FALSE;
 	while(!game_over) {
 			// TIME ---------------------------
 		napms(50);
 
-			// GAME LOGIC ---------------------
+			// INPUTS -------------------------
 		switch(getch()) {
+			case KEY_UP: 
+				if (does_piece_fit(board, currentPiece, currentRotation, piecePos.x, piecePos.y - 1))
+					piecePos.y--; 
+				break;
+			case KEY_DOWN: 
+				if (does_piece_fit(board, currentPiece, currentRotation, piecePos.x, piecePos.y + 1))
+					piecePos.y++; 
+				break;
+			case KEY_LEFT: 
+				if (does_piece_fit(board, currentPiece, currentRotation, piecePos.x - 1, piecePos.y))
+					piecePos.x--; 
+				break;
+			case KEY_RIGHT:
+				if (does_piece_fit(board, currentPiece, currentRotation, piecePos.x + 1, piecePos.y))
+					piecePos.x++; 
+				break;
+
+			case ' ':
+					// nextRotation is used so it doesn't break the rotate function in does_piece_fit
+				int nextRotation;
+				if (currentRotation == 3) {
+					nextRotation = 0;
+				}
+				else {
+					nextRotation = currentRotation + 1;
+				}
+
+				if (does_piece_fit(board, currentPiece, nextRotation, piecePos.x, piecePos.y)) {
+					currentRotation = nextRotation;
+				}
+				break;
 			case '\e': game_over = TRUE; break;
-			case ' ': if (currentRotation == 3) currentRotation = 0; else ++currentRotation; break;
-			case KEY_UP: piecePos.y--; break;
-			case KEY_DOWN: piecePos.y++; break;
-			case KEY_LEFT: piecePos.x--; break;
-			case KEY_RIGHT: piecePos.x++; break;
 		}
 
-			// DRAWING ------------------------
+			// GAME LOGIC ---------------------
+			// DISPLAY ------------------------
 		erase();
 		draw_board(board);
 		draw_piece(currentPiece, piecePos, currentRotation);
@@ -83,11 +92,11 @@ void draw_board(char *board[BOARD_WIDTH * BOARD_HEIGHT]) {
 	}
 }
 
-void draw_piece(char currentPiece[17], vector2 pos, int rotation) {
+void draw_piece(char currentPiece[17], vector2 piecePos, int currentRotation) {
 	for (int y = 0; y < 4; ++y) {
 		for (int x = 0; x < 4; ++x) {
-			if (currentPiece[rotate(x, y, rotation)] == 'x') {
-				mvaddch(y + pos.y, x + pos.x, 'x');
+			if (currentPiece[rotate(x, y, currentRotation)] == 'x') {
+				mvaddch(y + piecePos.y, x + piecePos.x, 'x');
 			}
 		}
 	}
