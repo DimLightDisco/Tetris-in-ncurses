@@ -1,13 +1,10 @@
-#ifndef ASSETS_H
-#define ASSETS_H
+#pragma once
 
-// the size of the board
 #define BOARD_WIDTH 12
-#define BOARD_HEIGHT 18
+#define BOARD_HEIGHT 19
 
-// these functions makes/initialize all the assets
-// (aka: the tetrimino blocks and the board
+	/* these functions makes/initialize all the assets in the program
+	 * (aka: the tetrimino blocks and the board)
+	 */
 void init_tetrimino(char tetrimino[7][18]);
 void init_board(char *board[BOARD_WIDTH * BOARD_HEIGHT]);
-
-#endif
